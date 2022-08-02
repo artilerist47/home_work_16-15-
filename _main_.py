@@ -146,11 +146,33 @@ def get_data_offer(input_data):
     db.session.commit()
 
 
-def get_all_users():
-    return [row.to_dict() for row in User.query.all()]
+def get_all(selected_model):
+    return [row.to_dict() for row in db.session.query(selected_model)]
+
+
+# def get_all_users():
+#     return [row.to_dict() for row in User.query.all()]
 
     # result = []
     # for row in User.query.all():
+    #     result.append(row.to_dict())
+    # return result
+
+
+# def get_all_orders():
+#     return [row.to_dict() for row in Order.query.all()]
+
+    # result = []
+    # for row in Order.query.all():
+    #     result.append(row.to_dict())
+    # return result
+
+
+# def get_all_offers():
+#     return [row.to_dict() for row in Offer.query.all()]
+
+    # result = []
+    # for row in Offer.query.all():
     #     result.append(row.to_dict())
     # return result
 
@@ -168,15 +190,6 @@ def get_one_user(user_id):
     #         return row
 
 
-def get_all_orders():
-    return [row.to_dict() for row in Order.query.all()]
-
-    # result = []
-    # for row in Order.query.all():
-    #     result.append(row.to_dict())
-    # return result
-
-
 def get_one_order(order_id):
     # return db.session.query(Order).filter(Order.id == order_id).first().to_dict()
 
@@ -189,14 +202,6 @@ def get_one_order(order_id):
     #     if row.get('id') == user_id:
     #         return row
 
-
-def get_all_offers():
-    return [row.to_dict() for row in Offer.query.all()]
-
-    # result = []
-    # for row in Offer.query.all():
-    #     result.append(row.to_dict())
-    # return result
 
 
 def get_one_offer(offer_id):
@@ -227,7 +232,20 @@ with open("offers.json") as file:
 
 @app.route("/users")
 def get_all_users_views():
-    return jsonify(get_all_users())
+    # return jsonify(get_all_users())
+    return jsonify(get_all(User))
+
+
+@app.route("/orders")
+def get_all_orders_views():
+    # return jsonify(get_all_orders())
+    return jsonify(get_all(Order))
+
+
+@app.route("/offers")
+def get_all_offers_views():
+    # return jsonify(get_all_offers())
+    return jsonify(get_all(Offer))
 
 
 @app.route("/users/<int:user_id>")
@@ -238,22 +256,12 @@ def get_one_user_views(user_id):
         return abort(404, ValueError("No such user found|Такой пользователь не найден"))
 
 
-@app.route("/orders")
-def get_all_orders_views():
-    return jsonify(get_all_orders())
-
-
 @app.route("/orders/<int:order_id>")
 def get_one_order_views(order_id):
     try:
         return jsonify(get_one_order(order_id))
     except AttributeError:
         return abort(404, ValueError("No such order found|Такой заказ не найден"))
-
-
-@app.route("/offers")
-def get_all_offers_views():
-    return jsonify(get_all_offers())
 
 
 @app.route("/offers/<int:offer_id>")
