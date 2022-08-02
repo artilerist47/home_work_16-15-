@@ -1,6 +1,6 @@
 import json
 
-from flask import Flask, jsonify, abort
+from flask import Flask, jsonify, abort, request
 from flask_sqlalchemy import SQLAlchemy
 
 
@@ -20,7 +20,7 @@ class User(db.Model):
     first_name = db.Column(db.String(15))
     last_name = db.Column(db.String(30))
     age = db.Column(db.Integer)
-    email = db.Column(db.String(100), unique=True)
+    email = db.Column(db.String(100))
     role = db.Column(db.String(20))
     phone = db.Column(db.String(15))
 
@@ -88,7 +88,7 @@ class Offer(db.Model):
         }
 
 
-def get_data_user(input_data):
+def put_data_user(input_data):
     """
     Получаем данные о пользователей
     :param input_data: загружаемые данные пользователей
@@ -108,7 +108,7 @@ def get_data_user(input_data):
     db.session.commit()
 
 
-def get_data_order(input_data):
+def put_data_order(input_data):
     """
     Получаем данные заказа
     :param input_data: загружаемые данные предложения
@@ -130,7 +130,7 @@ def get_data_order(input_data):
     db.session.commit()
 
 
-def get_data_offer(input_data):
+def put_data_offer(input_data):
     """
     Получаем данные предложений
     :param input_data: загружаемые данные предложений
@@ -163,43 +163,69 @@ def get_one(selected_model, selected_id):
     return db.session.query(selected_model).get(selected_id).to_dict()
 
 
+def update_data_user(model, user_id, values):
+
+    data = db.session.query(model).get(user_id)
+    data.id = values.get('id')
+    data.first_name = values.get('first_name')
+    data.last_name = values.get('last_name')
+    data.age = values.get('age')
+    data.email = values.get('email')
+    data.role = values.get('role')
+    data.phone = values.get('phone')
+
+    db.session.commit()
+
 db.drop_all()
 db.create_all()
 
 with open("users.json", encoding='utf-8') as file:
-    get_data_user(json.load(file))
+    put_data_user(json.load(file))
 
 with open("orders.json", encoding='utf-8') as file:
-    get_data_order(json.load(file))
+    put_data_order(json.load(file))
 
 with open("offers.json") as file:
-    get_data_offer(json.load(file))
+    put_data_offer(json.load(file))
 
 
-@app.route("/users")
+@app.route("/users", methods=["GET", "POST"])
 def get_all_users_views():
-    # return jsonify(get_all_users())
-    return jsonify(get_all(User))
+    if request.method == "GET":
+        return jsonify(get_all(User))
+    elif request.method == "POST":
+        put_data_user([request.json])
+        return jsonify(request.json)
 
 
-@app.route("/orders")
+@app.route("/orders", methods=["GET", "POST"])
 def get_all_orders_views():
-    # return jsonify(get_all_orders())
-    return jsonify(get_all(Order))
+    if request.method == "GET":
+        return jsonify(get_all(Order))
+    elif request.method == "POST":
+        put_data_order([request.json])
+        return jsonify(request.json)
 
 
-@app.route("/offers")
+@app.route("/offers", methods=["GET", "POST"])
 def get_all_offers_views():
-    # return jsonify(get_all_offers())
-    return jsonify(get_all(Offer))
+    if request.method == "GET":
+        return jsonify(get_all(Offer))
+    elif request.method == "POST":
+        put_data_offer([request.json])
+        return jsonify(request.json)
 
 
 @app.route("/users/<int:user_id>")
 def get_one_user_views(user_id):
-    try:
-        return jsonify(get_one(User, user_id))
-    except AttributeError:
-        return abort(404, ValueError("No such user found|Такой пользователь не найден"))
+    if request.method == "GET":
+        try:
+            return jsonify(get_one(User, user_id))
+        except AttributeError:
+            return abort(404, ValueError("No such user found|Такой пользователь не найден"))
+    # elif request.method == "PUT":
+    #     update_data_user(User, user_id, request.json)
+    #     return jsonify(["ok"])
 
 
 @app.route("/orders/<int:order_id>")
