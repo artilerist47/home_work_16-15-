@@ -154,89 +154,13 @@ def get_all(selected_model):
     return [row.to_dict() for row in db.session.query(selected_model)]
 
 
-# def get_all_users():
-#     """
-#     Получаем всех пользователей
-#     """
-#
-#     return [row.to_dict() for row in User.query.all()]
-#
-#     # result = []
-#     # for row in User.query.all():
-#     #     result.append(row.to_dict())
-#     # return result
-
-
-# def get_all_orders():
-#     """
-#     Получаем все заказы
-#     """
-#     return [row.to_dict() for row in Order.query.all()]
-#
-#     # result = []
-#     # for row in Order.query.all():
-#     #     result.append(row.to_dict())
-#     # return result
-
-
-# def get_all_offers():
-#     """
-#     Получаем все предложения
-#     """
-#     return [row.to_dict() for row in Offer.query.all()]
-#
-#     # result = []
-#     # for row in Offer.query.all():
-#     #     result.append(row.to_dict())
-#     # return result
-
-
-def get_one_user(user_id):
+def get_one(selected_model, selected_id):
     """
-    Получаем одного пользователя
+    Универсальный метод получения одного объекта выбранной модели.
+    :param selected_model: выбор модели (заказ, юзер, предложение)
+    :param selected_id: выбор ID у выбранной модели
     """
-    # return db.session.query(User).filter(User.id == user_id).first().to_dict()
-
-    return db.session.query(User).get(user_id).to_dict()
-
-    # return [row for row in get_all_users() if row.get("id") == user_id]
-
-    # data = get_all_users()
-    # for row in data:
-    #     if row.get('id') == user_id:
-    #         return row
-
-
-def get_one_order(order_id):
-    """
-    Получаем одни заказ
-    """
-    # return db.session.query(Order).filter(Order.id == order_id).first().to_dict()
-
-    return db.session.query(Order).get(order_id).to_dict()
-
-    # return [row for row in get_all_orders() if row.get("id") == order_id]
-
-    # data = get_all_orders()
-    # for row in data:
-    #     if row.get('id') == user_id:
-    #         return row
-
-
-def get_one_offer(offer_id):
-    """
-    Получаем одно предложение
-    """
-    # return db.session.query(Offer).filter(Offer.id == offer_id).first().to_dict()
-
-    return db.session.query(Offer).get(offer_id).to_dict()
-
-    # return [row for row in get_all_offers() if row.get("id") == offer_id]
-
-    # data = get_all_offers()
-    # for row in data:
-    #     if row.get('id') == user_id:
-    #         return row
+    return db.session.query(selected_model).get(selected_id).to_dict()
 
 
 db.drop_all()
@@ -273,7 +197,7 @@ def get_all_offers_views():
 @app.route("/users/<int:user_id>")
 def get_one_user_views(user_id):
     try:
-        return jsonify(get_one_user(user_id))
+        return jsonify(get_one(User, user_id))
     except AttributeError:
         return abort(404, ValueError("No such user found|Такой пользователь не найден"))
 
@@ -281,7 +205,7 @@ def get_one_user_views(user_id):
 @app.route("/orders/<int:order_id>")
 def get_one_order_views(order_id):
     try:
-        return jsonify(get_one_order(order_id))
+        return jsonify(get_one(Order, order_id))
     except AttributeError:
         return abort(404, ValueError("No such order found|Такой заказ не найден"))
 
@@ -289,7 +213,7 @@ def get_one_order_views(order_id):
 @app.route("/offers/<int:offer_id>")
 def get_one_offer_views(offer_id):
     try:
-        return jsonify(get_one_offer(offer_id))
+        return jsonify(get_one(Offer, offer_id))
     except AttributeError:
         return abort(404, ValueError("No such offer found|Такое предложение не найдено"))
 
