@@ -24,7 +24,7 @@ class User(db.Model):
     role = db.Column(db.String(20))
     phone = db.Column(db.String(15))
 
-    def to_dict(self):
+    def view(self):
         return {
             "id": self.id,
             "first_name": self.first_name,
@@ -54,7 +54,7 @@ class Order(db.Model):
     customer_id = db.Column(db.Integer, db.ForeignKey(f'{User.__tablename__}.id'))
     executor_id = db.Column(db.Integer, db.ForeignKey(f'{User.__tablename__}.id'))
 
-    def to_dict(self):
+    def view(self):
         return {
             "id": self.id,
             "name": self.name,
@@ -80,7 +80,7 @@ class Offer(db.Model):
     order_id = db.Column(db.Integer, db.ForeignKey(f'{Order.__tablename__}.id'))
     executor_id = db.Column(db.Integer, db.ForeignKey(f'{User.__tablename__}.id'))
 
-    def to_dict(self):
+    def view(self):
         return {
             "id": self.id,
             "order_id": self.order_id,
@@ -88,7 +88,7 @@ class Offer(db.Model):
         }
 
 
-def put_data_user(input_data):
+def enter_user_data(input_data):
     """
     Получаем данные о пользователей
     :param input_data: загружаемые данные пользователей
@@ -108,7 +108,7 @@ def put_data_user(input_data):
     db.session.commit()
 
 
-def put_data_order(input_data):
+def enter_order_data(input_data):
     """
     Получаем данные заказа
     :param input_data: загружаемые данные предложения
@@ -130,7 +130,7 @@ def put_data_order(input_data):
     db.session.commit()
 
 
-def put_data_offer(input_data):
+def enter_offer_data(input_data):
     """
     Получаем данные предложений
     :param input_data: загружаемые данные предложений
@@ -146,102 +146,95 @@ def put_data_offer(input_data):
     db.session.commit()
 
 
-def get_all(selected_model):
-    """
-    Универсальный метод получения всех объектов выбранной модели.
-    :param selected_model: выбор модели (заказ, юзер, предложение)
-    """
-    return [row.to_dict() for row in db.session.query(selected_model)]
-
-
-def get_one(selected_model, selected_id):
-    """
-    Универсальный метод получения одного объекта выбранной модели.
-    :param selected_model: выбор модели (заказ, юзер, предложение)
-    :param selected_id: выбор ID у выбранной модели
-    """
-    return db.session.query(selected_model).get(selected_id).to_dict()
-
-
-def update_data_user(model, user_id, values):
-
-    data = db.session.query(model).get(user_id)
-    data.id = values.get('id')
-    data.first_name = values.get('first_name')
-    data.last_name = values.get('last_name')
-    data.age = values.get('age')
-    data.email = values.get('email')
-    data.role = values.get('role')
-    data.phone = values.get('phone')
-
-    db.session.commit()
-
 db.drop_all()
 db.create_all()
 
 with open("users.json", encoding='utf-8') as file:
-    put_data_user(json.load(file))
+    enter_user_data(json.load(file))
 
 with open("orders.json", encoding='utf-8') as file:
-    put_data_order(json.load(file))
+    enter_order_data(json.load(file))
 
 with open("offers.json") as file:
-    put_data_offer(json.load(file))
+    enter_offer_data(json.load(file))
 
 
 @app.route("/users", methods=["GET", "POST"])
 def get_all_users_views():
     if request.method == "GET":
-        return jsonify(get_all(User))
+        return jsonify([user_response.view() for user_response in db.session.query(User)])
     elif request.method == "POST":
-        put_data_user([request.json])
+        enter_user_data([request.json])
         return jsonify(request.json)
 
 
 @app.route("/orders", methods=["GET", "POST"])
 def get_all_orders_views():
     if request.method == "GET":
-        return jsonify(get_all(Order))
+        return jsonify([user_response.view() for user_response in db.session.query(Order)])
     elif request.method == "POST":
-        put_data_order([request.json])
+        enter_order_data([request.json])
         return jsonify(request.json)
 
 
 @app.route("/offers", methods=["GET", "POST"])
 def get_all_offers_views():
     if request.method == "GET":
-        return jsonify(get_all(Offer))
+        return jsonify([user_response.view() for user_response in db.session.query(Offer)])
     elif request.method == "POST":
-        put_data_offer([request.json])
+        enter_offer_data([request.json])
         return jsonify(request.json)
 
 
-@app.route("/users/<int:user_id>")
+@app.route("/users/<int:user_id>", methods=["GET", "PUT", "DELETE"])
 def get_one_user_views(user_id):
     if request.method == "GET":
         try:
-            return jsonify(get_one(User, user_id))
+            return jsonify(db.session.query(User).get(user_id).view())
         except AttributeError:
             return abort(404, ValueError("No such user found|Такой пользователь не найден"))
-    # elif request.method == "PUT":
-    #     update_data_user(User, user_id, request.json)
-    #     return jsonify(["ok"])
+    elif request.method == "PUT":
+        db.session.query(User).filter(User.id == user_id).update(request.json)
+        db.session.commit()
+        return jsonify(f"Данные обновлены:", request.json)
+    elif request.method == "DELETE":
+        db.session.delete(db.session.query(User).get(user_id))
+        db.session.commit()
+        return jsonify(f"Данные пользователя удалены")
 
 
-@app.route("/orders/<int:order_id>")
+@app.route("/orders/<int:order_id>", methods=["GET", "PUT", "DELETE"])
 def get_one_order_views(order_id):
-    try:
-        return jsonify(get_one(Order, order_id))
-    except AttributeError:
-        return abort(404, ValueError("No such order found|Такой заказ не найден"))
+    if request.method == "GET":
+        try:
+            return jsonify(db.session.query(Order).get(order_id).view())
+        except AttributeError:
+            return abort(404, ValueError("No such order found|Такой заказ не найден"))
+    elif request.method == "PUT":
+        db.session.query(Order).filter(Order.id == order_id).update(request.json)
+        db.session.commit()
+        return jsonify(f"Данные обновлены:", request.json)
+    elif request.method == "DELETE":
+        db.session.delete(db.session.query(Order).get(order_id))
+        db.session.commit()
+        return jsonify(f"Данные заказа удалены")
 
 
-@app.route("/offers/<int:offer_id>")
+@app.route("/offers/<int:offer_id>", methods=["GET", "PUT", "DELETE"])
 def get_one_offer_views(offer_id):
-    try:
-        return jsonify(get_one(Offer, offer_id))
-    except AttributeError:
-        return abort(404, ValueError("No such offer found|Такое предложение не найдено"))
+    if request.method == "GET":
+        try:
+            return jsonify(db.session.query(Offer).get(offer_id).view())
+        except AttributeError:
+            return abort(404, ValueError("No such offer found|Такое предложение не найдено"))
+    elif request.method == "PUT":
+        db.session.query(Offer).filter(Offer.id == offer_id).update(request.json)
+        db.session.commit()
+        return jsonify(f"Данные обновлены:", request.json)
+    elif request.method == "DELETE":
+        db.session.delete(db.session.query(Offer).get(offer_id))
+        db.session.commit()
+        return jsonify(f"Данные предложения удалены")
 
 
 if __name__ == "__main__":
