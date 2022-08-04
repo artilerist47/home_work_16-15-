@@ -1,4 +1,4 @@
-from config import db
+from app import db
 
 
 class User(db.Model):
@@ -11,7 +11,7 @@ class User(db.Model):
     first_name = db.Column(db.String(15))
     last_name = db.Column(db.String(30))
     age = db.Column(db.Integer)
-    email = db.Column(db.String(100), unique=True)
+    email = db.Column(db.String(100))
     role = db.Column(db.String(20))
     phone = db.Column(db.String(15))
 
